@@ -1,16 +1,17 @@
-.PHONY: install sync lint format test test-cov type-check check all clean help
+.PHONY: install sync lint format test test-cov type-check check verify clean help
 
 # Default target
 help:
 	@echo "Available commands:"
 	@echo "  make install    - Install all dependencies"
 	@echo "  make sync       - Sync dependencies with lock file"
-	@echo "  make lint       - Run linter (ruff check)"
 	@echo "  make format     - Format code (ruff format)"
+	@echo "  make lint       - Run linter (ruff check)"
+	@echo "  make type-check - Run type checker (mypy)"
 	@echo "  make test       - Run tests"
 	@echo "  make test-cov   - Run tests with coverage report"
-	@echo "  make type-check - Run type checker (mypy)"
-	@echo "  make check      - Run all checks (format, lint, type-check, test)"
+	@echo "  make verify     - Run full verification (format → lint → type-check → test)"
+	@echo "  make check      - Alias for verify"
 	@echo "  make clean      - Remove build artifacts"
 
 # Install dependencies
@@ -42,8 +43,20 @@ test-cov:
 type-check:
 	uv run mypy src
 
-# Run all checks
-check: format lint type-check test
+# Run full verification (sequential, fails fast)
+verify:
+	@echo "\n=== Formatting ==="
+	uv run ruff format src tests
+	@echo "\n=== Linting ==="
+	uv run ruff check src tests
+	@echo "\n=== Type Checking ==="
+	uv run mypy src
+	@echo "\n=== Running Tests ==="
+	uv run pytest
+	@echo "\n✅ All checks passed!"
+
+# Alias for verify
+check: verify
 
 # Clean build artifacts
 clean:
